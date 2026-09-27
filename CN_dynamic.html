@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>수주통보서 - 동적 행/페이지 샘플</title>
+<style>
+:root{
+  --ink:#111827;
+  --muted:#5d6878;
+  --line:#111;
+  --label:#e8e8e8;
+  --accent:#176b5b;
+  --accent-soft:#e7f4f0;
+  --danger:#b42318;
+  --paper-w:198mm;
+  --paper-h:285mm;
+}
+*{box-sizing:border-box;}
+html{background:#e9edf1;}
+body{
+  margin:0;
+  color:var(--ink);
+  background:#e9edf1;
+  font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;
+}
+button,select,input,textarea{font:inherit;}
+button{cursor:pointer;}
+
+.toolbar{
+  position:sticky;
+  top:0;
+  z-index:50;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  padding:10px 14px;
+  color:#fff;
+  background:#12262a;
+  box-shadow:0 4px 16px rgba(15,23,42,.2);
+}
+.toolbar-group{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding-right:10px;
+  margin-right:2px;
+  border-right:1px solid rgba(255,255,255,.18);
+}
+.toolbar-group:last-child{border-right:0;}
+.toolbar label{font-size:12px;color:#d6e0e1;}
+.toolbar button,.toolbar select{
+  min-height:34px;
+  border:1px solid rgba(255,255,255,.24);
+  border-radius:6px;
+}
+.toolbar button{
+  padding:6px 11px;
+  color:#fff;
+  background:#234248;
+}
+.toolbar button:hover{background:#31565d;}
+.toolbar button.primary{background:#16826d;border-color:#1b9b82;font-weight:700;}
+.toolbar button.primary:hover{background:#109077;}
+.toolbar select{padding:4px 8px;color:#162126;background:#fff;}
+.toolbar .project-select{min-width:230px;max-width:320px;}
+.toolbar .compact{min-width:36px;padding:4px 8px;font-size:17px;font-weight:700;}
+.status-chip{
+  display:inline-flex;
+  align-items:center;
+  min-height:32px;
+  padding:5px 10px;
+  border-radius:999px;
+  color:#d9fff5;
+  background:rgba(22,130,109,.24);
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.app-shell{padding:20px 12px 40px;}
+.notice{
+  width:min(var(--paper-w),calc(100vw - 24px));
+  margin:0 auto 12px;
+  padding:10px 13px;
+  border:1px solid #b7d9d1;
+  border-radius:8px;
+  background:#f3fbf8;
+  color:#214d45;
+  font-size:12px;
+  line-height:1.5;
+}
+.validation-panel{
+  display:none;
+  width:min(var(--paper-w),calc(100vw - 24px));
+  margin:0 auto 12px;
+  padding:12px 14px;
+  border:1px solid #f0b5af;
+  border-radius:8px;
+  background:#fff4f2;
+  color:#7a271a;
+  font-size:12px;
+  line-height:1.6;
+}
+.validation-panel.show{display:block;}
+.validation-panel.ok{display:block;border-color:#a7d8ca;background:#eefaf6;color:#14624f;}
+.editor-paper{
+  width:var(--paper-w);
+  min-height:var(--paper-h);
+  margin:0 auto;
+  background:#fff;
+  box-shadow:0 16px 46px rgba(15,23,42,.18);
+}
+
+table{width:100%;border-collapse:collapse;table-layout:fixed;border:0.7px solid var(--line);}
+td,th{
+  border:0.7px solid var(--line);
+  padding:5px 7px;
+  font-size:12px;
+  vertical-align:middle;
+}
+.label{background:var(--label);font-weight:700;text-align:center;}
+.center{text-align:center;}
+.right{text-align:right;}
+.tiny{font-size:10.5px;font-weight:400;}
+.fill{padding:0;}
+.document-header td{vertical-align:middle;}
+.logo-cell{width:18%;text-align:center;border-right:none;padding:5px;}
+.title-cell{width:48%;text-align:center;border-left:none;border-right:none;}
+.info-cell{width:34%;padding:0;}
+.logo-stack{position:relative;display:grid;place-items:center;min-height:52px;}
+.logo-stack>*{grid-area:1/1;}
+.logo-stack img{display:block;max-width:100%;max-height:50px;object-fit:contain;}
+.brand-fallback{display:none;line-height:1;color:#30363b;text-align:center;}
+.brand-fallback strong{display:block;font-size:25px;font-style:italic;letter-spacing:-2px;}
+.brand-fallback span{font-size:8px;letter-spacing:.8px;}
+.title-ko{margin:2px 0 6px;font-size:28px;font-weight:900;letter-spacing:8px;line-height:1.2;}
+.title-en{font-size:14px;font-weight:700;}
+.docinfo{height:100%;border:0;}
+.docinfo td{height:25%;padding:4px;text-align:center;font-size:11.5px;}
+.docinfo .k{width:39%;background:var(--label);font-weight:700;}
+.docinfo .v{width:61%;}
+.docinfo tr:first-child td{border-top:0;}
+.docinfo tr:last-child td{border-bottom:0;}
+.docinfo td:first-child{border-left:0;}
+.docinfo td:last-child{border-right:0;}
+
+.ctrl{
+  display:block;
+  width:100%;
+  min-width:0;
+  border:0;
+  outline:0;
+  padding:3px 4px;
+  color:#111;
+  background:transparent;
+  font-size:12px;
+}
+textarea.ctrl{resize:none;overflow:hidden;line-height:1.35;}
+select.ctrl{appearance:auto;}
+.ctrl:focus{background:#f0faf7;box-shadow:inset 0 0 0 2px #50a995;}
+.ctrl.auto-linked{background:#eefaf6;box-shadow:inset 3px 0 0 #2a9b82;}
+.ctrl.invalid,.item-row .invalid{background:#fff1ef!important;box-shadow:inset 0 0 0 2px #e66b5f!important;}
+.date-picker{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 30px;
+  align-items:center;
+  width:100%;
+}
+.date-picker .date-display{grid-column:1/2;}
+.date-picker .date-icon{
+  grid-column:2/3;
+  grid-row:1;
+  display:grid;
+  place-items:center;
+  height:28px;
+  color:#40505a;
+  font-size:16px;
+  pointer-events:none;
+}
+.date-picker .date-native{
+  grid-column:2/3;
+  grid-row:1;
+  width:30px;
+  height:30px;
+  margin:0;
+  border:0;
+  opacity:0;
+  cursor:pointer;
+}
+.field-table{border-top:0;}
+.field-table col:nth-child(1){width:15%;}
+.field-table col:nth-child(2){width:31%;}
+.field-table col:nth-child(3){width:22%;}
+.field-table col:nth-child(4){width:32%;}
+.field-table td{height:38px;}
+.field-table td.multiline{height:54px;}
+.payment-row{display:flex;align-items:center;gap:8px;}
+.amount-line{display:grid;grid-template-columns:68px 210px max-content 1fr;align-items:center;gap:6px;}
+.amount-line .amount-value{width:100%;text-align:right;}
+.amount-line .vat-label{justify-self:start;padding-left:8px;white-space:nowrap;}
+.section-title{padding:6px 8px;border:0.7px solid var(--line);border-top:0;background:var(--label);font-size:12px;font-weight:700;}
+
+.items-wrap{position:relative;}
+.items-table{border-top:0;}
+.items-table th{height:48px;background:var(--label);font-size:11.5px;text-align:center;}
+.items-table td{padding:2px 4px;}
+.items-table .no-cell{text-align:center;}
+.items-table .numeric{text-align:right;}
+.items-table .action-head,.items-table .action-cell{width:6%;background:#f5f7f8;text-align:center;}
+.item-row{height:30px;transition:background .12s ease;}
+.item-row td{vertical-align:middle;}
+.item-row:hover{background:#f6fbf9;}
+.item-row.selected{background:#e7f4f0;outline:2px solid var(--accent);outline-offset:-2px;}
+.item-row textarea{
+  display:block;
+  width:100%;
+  min-height:28px;
+  border:0;
+  outline:0;
+  padding:5px 3px;
+  resize:none;
+  overflow:hidden;
+  background:transparent;
+  line-height:1.35;
+  font-size:11.5px;
+}
+.item-row input,.item-row select{
+  display:block;
+  width:100%;
+  min-height:28px;
+  border:0;
+  outline:0;
+  padding:4px 2px;
+  background:transparent;
+  font-size:11.5px;
+}
+.item-row textarea:focus,.item-row input:focus,.item-row select:focus{background:#f0faf7;box-shadow:inset 0 0 0 2px #50a995;}
+.delete-row{
+  width:27px;
+  height:27px;
+  border:1px solid #d8dde2;
+  border-radius:5px;
+  color:#7a271a;
+  background:#fff;
+  font-weight:900;
+}
+.delete-row:hover{border-color:#d26b62;background:#fff1ef;}
+
+.closing-block{width:100%;}
+.note-block{border:0.7px solid var(--line);border-top:0;min-height:32mm;padding:5px 8px;}
+.note-label{display:block;margin-bottom:3px;font-size:11.5px;}
+.note-block textarea{min-height:27mm;}
+.attached-table{border-top:0;}
+.attached-table col:first-child{width:14%;}
+.attached-table col:last-child{width:86%;}
+.attached-table td{height:22mm;}
+.distribution-table{border-top:0;}
+.distribution-table col:nth-child(1){width:14%;}
+.distribution-table col:nth-child(2),
+.distribution-table col:nth-child(3),
+.distribution-table col:nth-child(4),
+.distribution-table col:nth-child(5),
+.distribution-table col:nth-child(6){width:13%;}
+.distribution-table col:nth-child(7){width:21%;}
+.distribution-table tr:first-child td{height:12mm;}
+.distribution-table tr:last-child td{height:16mm;}
+.fixed-width-note{
+  padding:6px 8px;
+  border-left:0.7px solid var(--line);
+  border-right:0.7px solid var(--line);
+  background:#f7faf9;
+  color:#31564e;
+  font-size:10.5px;
+}
+.form-footer{
+  display:grid;
+  grid-template-columns:1.2fr 1fr 1fr;
+  align-items:center;
+  min-height:7mm;
+  padding:2px 4px;
+  font-size:10.5px;
+}
+.form-footer span:nth-child(2){text-align:center;}
+.form-footer span:nth-child(3){text-align:right;}
+
+/* 인쇄용 정적 페이지 */
+#printRoot{display:none;}
+.print-page{
+  position:relative;
+  width:var(--paper-w);
+  height:var(--paper-h);
+  padding:0 0 7mm;
+  overflow:hidden;
+  background:#fff;
+  color:#111;
+  break-after:page;
+  page-break-after:always;
+}
+.print-page:last-child{break-after:auto;page-break-after:auto;}
+.print-page .document-header{border-top:0.7px solid var(--line);}
+.print-static-value{min-height:18px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.3;}
+.print-items{border-top:0;}
+.print-items th{height:48px;background:var(--label);font-size:11.5px;text-align:center;}
+.print-items td{padding:4px 5px;font-size:11.5px;vertical-align:middle;}
+.print-item-row .print-static-value{min-height:20px;}
+.print-item-row{break-inside:avoid;page-break-inside:avoid;}
+.print-page-footer{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:7mm;
+  display:grid;
+  grid-template-columns:1.25fr 1fr 1fr;
+  align-items:center;
+  padding:1px 3px 0;
+  font-size:10.5px;
+}
+.print-page-footer span:nth-child(2){text-align:center;}
+.print-page-footer span:nth-child(3){text-align:right;}
+.print-closing .note-block{min-height:32mm;}
+.print-closing .attached-table td{height:22mm;}
+.print-closing .distribution-table tr:first-child td{height:12mm;}
+.print-closing .distribution-table tr:last-child td{height:16mm;}
+
+#measureRoot{
+  position:absolute;
+  left:-12000px;
+  top:0;
+  width:var(--paper-w);
+  visibility:hidden;
+  pointer-events:none;
+}
+.measure-width{width:var(--paper-w);background:#fff;}
+.measure-page-ruler{width:var(--paper-w);height:var(--paper-h);}
+.measure-footer-ruler{height:7mm;}
+
+@page{size:A4;margin:6mm;}
+@media print{
+  html,body{margin:0!important;background:#fff!important;}
+  #app,#measureRoot{display:none!important;}
+  #printRoot{display:block!important;}
+  .print-page{margin:0!important;box-shadow:none!important;}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
+@media screen and (max-width:900px){
+  .app-shell{overflow-x:auto;}
+  .notice,.validation-panel{width:var(--paper-w);}
+  .toolbar{position:relative;min-width:760px;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="toolbar" aria-label="문서 편집 도구">
+    <div class="toolbar-group">
+      <button type="button" id="addRowBtn" class="primary">＋ 행 추가</button>
+      <button type="button" id="validateBtn">입력 검토</button>
+      <button type="button" id="printBtn">인쇄 / PDF</button>
+    </div>
+    <div class="toolbar-group">
+      <button type="button" id="saveFileBtn" class="primary">작성파일 저장</button>
+      <button type="button" id="loadFileBtn">저장파일 불러오기</button>
+      <input type="file" id="loadFileInput" accept=".json,application/json" hidden>
+    </div>
+    <div class="toolbar-group">
+      <button type="button" id="loadProjectListBtn">프로젝트 목록 연결</button>
+      <select id="projectSelect" class="project-select" aria-label="연결할 프로젝트 선택" disabled>
+        <option value="">프로젝트 목록을 먼저 불러오세요</option>
+      </select>
+      <input type="file" id="projectListInput" accept=".json,.csv,application/json,text/csv" hidden>
+    </div>
+    <div class="toolbar-group">
+      <label for="columnSelect">수주내역 열</label>
+      <select id="columnSelect" aria-label="너비를 조정할 열">
+        <option value="0">순번</option><option value="1">품명</option><option value="2" selected>기술사항</option>
+        <option value="3">수량</option><option value="4">단위</option><option value="5">단가</option>
+        <option value="6">금액</option><option value="7">비고</option>
+      </select>
+      <button type="button" class="compact" id="colMinusBtn" title="선택한 열 줄이기">−</button>
+      <button type="button" class="compact" id="colPlusBtn" title="선택한 열 늘리기">＋</button>
+    </div>
+    <div class="toolbar-group">
+      <label>선택 행 높이</label>
+      <button type="button" class="compact" id="rowMinusBtn" title="선택한 행 높이 줄이기">−</button>
+      <button type="button" class="compact" id="rowPlusBtn" title="선택한 행 높이 늘리기">＋</button>
+    </div>
+    <div class="toolbar-group">
+      <label for="allRowHeightSelect">전체 행 높이</label>
+      <select id="allRowHeightSelect" aria-label="수주내역 전체 행 높이">
+        <option value="auto">내용별 자동</option>
+        <option value="32">1줄 기준</option>
+        <option value="50">2줄 기준</option>
+        <option value="68">3줄 기준</option>
+        <option value="uniform">가장 높은 행으로 통일</option>
+      </select>
+    </div>
+    <div class="toolbar-group">
+      <button type="button" id="sampleBtn">예시 다시 불러오기</button>
+      <button type="button" id="clearBtn">전체 초기화</button>
+    </div>
+    <span class="status-chip" id="pageStatus">페이지 계산 중…</span>
+    <span class="status-chip">하단 결재 영역: 고정</span>
+  </div>
+
+  <main class="app-shell">
+    <div class="notice">
+      문서에서 직접 입력하세요. 내용은 현재 브라우저에 자동 임시저장되며, <strong>작성파일 저장</strong>을 누르면 다른 PC에서도 불러올 수 있는 파일로 내려받습니다.
+      품명·기술사항·비고는 Enter로 2~3줄 입력할 수 있고 행 높이가 자동으로 늘어납니다.
+    </div>
+    <div id="validationPanel" class="validation-panel" role="status" aria-live="polite"></div>
+
+    <section class="editor-paper" id="editorPaper" aria-label="수주통보서 편집 영역">
+      <table class="document-header">
+        <tr style="height:60px">
+          <td class="logo-cell">
+            <div class="logo-stack">
+              <img src="assets/ygm-logo.png" alt="YG Metal 로고" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+              <div class="brand-fallback"><strong>YGM</strong><span>POWER &amp; OFFSHORE</span></div>
+            </div>
+          </td>
+          <td class="title-cell">
+            <div class="title-ko">수주통보서</div>
+            <div class="title-en">Contract Notification Report (CN)</div>
+          </td>
+          <td class="info-cell">
+            <table class="docinfo">
+              <tr><td class="k">문서번호</td><td class="v"><input class="ctrl doc-field required" name="doc_no" aria-label="문서번호"></td></tr>
+              <tr><td class="k">개정번호</td><td class="v"><input class="ctrl doc-field" name="rev_no" aria-label="개정번호"></td></tr>
+              <tr><td class="k">작성일</td><td class="v"><div class="date-picker"><input class="ctrl doc-field required date-display" name="write_date" data-date placeholder="YYYY.MM.DD" aria-label="작성일"><span class="date-icon">▦</span><input class="date-native" type="date" aria-label="작성일 달력 선택"></div></td></tr>
+              <tr><td class="k">페이지 번호</td><td class="v center"><span class="tiny">인쇄 시 자동 표시</span></td></tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <table class="field-table">
+        <col><col><col><col>
+        <tr>
+          <td class="label">수주번호<br><span class="tiny">P/O Number</span></td>
+          <td><input class="ctrl doc-field required" name="po_no"></td>
+          <td class="label">계약일자<br><span class="tiny">Contract Date</span></td>
+          <td><div class="date-picker"><input class="ctrl doc-field required date-display" name="contract_date" data-date placeholder="YYYY.MM.DD" aria-label="계약일자"><span class="date-icon">▦</span><input class="date-native" type="date" aria-label="계약일자 달력 선택"></div></td>
+        </tr>
+        <tr>
+          <td class="label">발주처/고객<br><span class="tiny">Clients/Customer</span></td>
+          <td><input class="ctrl doc-field required" name="customer"></td>
+          <td class="label">계약번호<br><span class="tiny">Contract Number</span></td>
+          <td><input class="ctrl doc-field" name="contract_number"></td>
+        </tr>
+        <tr>
+          <td class="label">공사명<br><span class="tiny">Project Name</span></td>
+          <td class="multiline fill"><textarea class="ctrl doc-field required" name="project_name"></textarea></td>
+          <td class="label">적용코드/등급<br><span class="tiny">Applied Code/Class</span></td>
+          <td><input class="ctrl doc-field" name="applied_code_class" list="codeOptions" placeholder="직접 입력 또는 선택"></td>
+        </tr>
+        <tr>
+          <td class="label">결제조건<br><span class="tiny">Payment</span></td>
+          <td>
+            <div class="payment-row">
+              <select class="ctrl doc-field required" name="payment">
+                <option value="">선택</option><option>정기결제</option><option>현금결제</option><option>기타</option>
+              </select>
+            </div>
+          </td>
+          <td class="label">고객발주서<br><span class="tiny">Customer Purchase Order</span></td>
+          <td><input class="ctrl doc-field" name="customer_po"></td>
+        </tr>
+        <tr>
+          <td class="label">공급범위<br><span class="tiny">Work Scope</span></td>
+          <td class="multiline fill"><textarea class="ctrl doc-field" name="work_scope"></textarea></td>
+          <td class="label">고객구매시방서<br><span class="tiny">Customer Purchase Spec</span></td>
+          <td class="multiline fill"><textarea class="ctrl doc-field" name="customer_spec"></textarea></td>
+        </tr>
+        <tr>
+          <td class="label">시험요건<br><span class="tiny">Test Condition</span></td>
+          <td><input class="ctrl doc-field" name="test_condition"></td>
+          <td class="label">납기일<br><span class="tiny">Delivery Date</span></td>
+          <td><div class="date-picker"><input class="ctrl doc-field required date-display" name="delivery_date" data-date placeholder="YYYY.MM.DD" aria-label="납기일"><span class="date-icon">▦</span><input class="date-native" type="date" aria-label="납기일 달력 선택"></div></td>
+        </tr>
+        <tr>
+          <td class="label">납품장소<br><span class="tiny">Delivery location</span></td>
+          <td><input class="ctrl doc-field" name="delivery_location"></td>
+          <td class="label">납품조건<br><span class="tiny">Delivery Condition</span></td>
+          <td><input class="ctrl doc-field" name="delivery_condition" list="deliveryOptions"></td>
+        </tr>
+        <tr>
+          <td class="label">수주금액<br><span class="tiny">Purchase Amount</span></td>
+          <td colspan="3">
+            <div class="amount-line"><span>(원화)</span><input class="ctrl doc-field amount-value" name="purchase_amount" data-number><span class="vat-label">VAT 별도</span></div>
+          </td>
+        </tr>
+      </table>
+
+      <div class="section-title">수주 내역 (Contract Condition)</div>
+      <div class="items-wrap">
+        <table class="items-table" id="editorItemsTable">
+          <colgroup id="editorColgroup">
+            <col><col><col><col><col><col><col><col><col style="width:6%">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>순번<br><span class="tiny">No.</span></th>
+              <th>품명<br><span class="tiny">Item Name</span></th>
+              <th>기술사항<br><span class="tiny">Description</span></th>
+              <th>수량<br><span class="tiny">Q'ty</span></th>
+              <th>단위<br><span class="tiny">Unit</span></th>
+              <th>단가<br><span class="tiny">Unit Price</span></th>
+              <th>금액<br><span class="tiny">Amount</span></th>
+              <th>비고<br><span class="tiny">Remark</span></th>
+              <th class="action-head">삭제</th>
+            </tr>
+          </thead>
+          <tbody id="itemBody"></tbody>
+        </table>
+      </div>
+
+      <div class="closing-block" id="editorClosing">
+        <div class="note-block">
+          <label class="note-label" for="noteField">Note (특이사항) :</label>
+          <textarea id="noteField" class="ctrl doc-field" name="note"></textarea>
+        </div>
+        <table class="attached-table">
+          <colgroup><col><col></colgroup>
+          <tr>
+            <td class="label">첨부자료<br><span class="tiny">Attached</span></td>
+            <td class="fill"><textarea class="ctrl doc-field" name="attached"></textarea></td>
+          </tr>
+        </table>
+        <table class="distribution-table">
+          <colgroup><col><col><col><col><col><col><col></colgroup>
+          <tr class="label">
+            <td rowspan="2">배포처<br><span class="tiny">Distributed to</span></td>
+            <td>구매팀<br><span class="tiny">PC TEAM</span></td>
+            <td>생산팀<br><span class="tiny">PD TEAM</span></td>
+            <td>QA팀<br><span class="tiny">QA TEAM</span></td>
+            <td>QA 검토<br><span class="tiny">Reviewed by QA</span></td>
+            <td>작 성<br><span class="tiny">Prepared by</span></td>
+            <td>검토 / 승인<br><span class="tiny">Reviewed / Approved by</span></td>
+          </tr>
+          <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        </table>
+        <div class="fixed-width-note">첨부자료·배포처·검토/승인 영역의 열 너비는 수주내역 열 조절과 무관하게 고정됩니다.</div>
+      </div>
+      <div class="form-footer"><span>YG-KQSP-012-02, Rev.1 (2023. 11. 30)</span><span>YG Metal Co., Ltd.</span><span>A4(210×297)mm</span></div>
+    </section>
+  </main>
+</div>
+
+<div id="printRoot" aria-hidden="true"></div>
+<div id="measureRoot" aria-hidden="true"></div>
+
+<datalist id="codeOptions"><option value="ASME Sec. VIII Div.1"><option value="ASME B31.3"><option value="API 650"><option value="KS / JIS"></datalist>
+<datalist id="deliveryOptions"><option value="현장 도착도"><option value="공장 상차도"><option value="고객 지정장소 납품"></datalist>
+
+<script>
+(function(){
+  'use strict';
+
+  const STORAGE_KEY = 'ygm-cn-dynamic-sample-v1';
+  const PROJECT_LIST_KEY = 'ygm-cn-project-list-v1';
+  const DEFAULT_COL_WIDTHS = [6,12,31,6,6,13,15,11];
+  const MIN_COL_WIDTHS = [5,8,20,5,5,8,10,8];
+  let colWidths = DEFAULT_COL_WIDTHS.slice();
+  let selectedRow = null;
+  let estimateTimer = null;
+  let uniformRowTimer = null;
+  let rowHeightMode = 'auto';
+  let projectRecords = [];
+  let projectSourceName = '';
+  let selectedProjectId = '';
+
+  const SAMPLE = {
+    fields:{
+      doc_no:'YG-CN-2026-081', rev_no:'0', write_date:'2026.08.31', po_no:'YGM-PO-26031',
+      contract_date:'2026.08.28', customer:'샘플 고객사', contract_number:'CN-260831-01',
+      project_name:'해양 플랜트 배관 제작 및 공급', applied_code_class:'ASME B31.3', payment:'정기결제',
+      customer_po:'PO-2026-0831', work_scope:'소재 구매, 제작, 검사 및 납품',
+      customer_spec:'CLIENT SPEC CS-104\nRev.2 적용', test_condition:'Hydro Test / VT / PMI',
+      delivery_date:'2026.11.30', delivery_location:'부산광역시 강서구 지정 야드',
+      delivery_condition:'현장 도착도', purchase_amount:'128,500,000',
+      note:'보수용접은 허용되지 않는 조건.\n재료시험성적서(Mill-Cert or MTR) 납품 시 제출조건.',
+      attached:'고객 발주서, 기술사양서, 승인도면 각 1부'
+    },
+    rows:[
+      ['PIPE SPOOL','A106 Gr.B / SCH.80\n100A × 1,200L','4','EA','1,250,000','5,000,000','도면 A-101'],
+      ['ELBOW','A234 WPB / 90° LR','8','EA','185,000','1,480,000',''],
+      ['TEE','A234 WPB / Equal Tee\nBE, ASME B16.9','6','EA','240,000','1,440,000','PMI 적용'],
+      ['REDUCER','Concentric Reducer\n150A × 100A','3','EA','220,000','660,000',''],
+      ['FLANGE','A105 / WN RF\nClass 300, ASME B16.5','12','EA','310,000','3,720,000','MTC 제출'],
+      ['GASKET','Spiral Wound Gasket / SS316','20','EA','48,000','960,000',''],
+      ['STUD BOLT','A193-B7 / A194-2H','48','SET','25,000','1,200,000','HDG'],
+      ['PIPE','A312 TP316L / SCH.40S\n6M Random Length','5','EA','1,100,000','5,500,000',''],
+      ['SUPPORT','Pipe Support Assembly\n도면 PS-04 기준 제작','10','EA','380,000','3,800,000','도장 포함'],
+      ['VALVE','Gate Valve / RF / Class 150','4','EA','980,000','3,920,000','검사성적서'],
+      ['NIPPLE','A106 Gr.B / NPT\n50A × 200L','15','EA','65,000','975,000',''],
+      ['COUPLING','A105 / SW / Class 3000','18','EA','42,000','756,000',''],
+      ['SPECTACLE BLIND','A516 Gr.70\nRF, Class 300','2','EA','410,000','820,000',''],
+      ['ORIFICE FLANGE','A105 / WN RF\nTap hole 및 Jack screw 포함','2','SET','780,000','1,560,000','검사 입회'],
+      ['DRAIN POT','A106 Gr.B Fabrication\nNDE: RT 100%, PT','2','EA','1,850,000','3,700,000','도면 승인 후 제작'],
+      ['NAME PLATE','SS316 Engraved Plate','20','EA','32,000','640,000',''],
+      ['PACKING','Export Seaworthy Packing\n방습 포장 및 Item Tag 부착','1','LOT','2,400,000','2,400,000','사진 제출'],
+      ['DOCUMENT','Final Data Book\nMTR, NDE, 치수검사 성적서\nPDF 및 원본 1부','1','LOT','1,500,000','1,500,000','납품 시 제출']
+    ]
+  };
+
+  const itemBody = document.getElementById('itemBody');
+  const pageStatus = document.getElementById('pageStatus');
+  const printRoot = document.getElementById('printRoot');
+  const measureRoot = document.getElementById('measureRoot');
+  const validationPanel = document.getElementById('validationPanel');
+
+  function makeId(){ return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function textValue(v){ return v == null ? '' : String(v); }
+
+  function createEditorRow(data){
+    const d = data || {};
+    const tr = document.createElement('tr');
+    tr.className = 'item-row';
+    tr.dataset.id = d.id || makeId();
+    tr.dataset.minHeight = String(Math.max(28, Number(d.minHeight) || 28));
+    tr.innerHTML =
+      '<td class="no-cell"></td>' +
+      '<td><textarea data-key="itemName" aria-label="품명"></textarea></td>' +
+      '<td><textarea data-key="description" aria-label="기술사항"></textarea></td>' +
+      '<td><input data-key="qty" class="numeric" aria-label="수량"></td>' +
+      '<td><select data-key="unit" aria-label="단위"><option value=""></option><option>EA</option><option>SET</option><option>LOT</option><option>KG</option><option>M</option></select></td>' +
+      '<td><input data-key="unitPrice" class="numeric" aria-label="단가"></td>' +
+      '<td><input data-key="amount" class="numeric" aria-label="금액"></td>' +
+      '<td><textarea data-key="remark" aria-label="비고"></textarea></td>' +
+      '<td class="action-cell"><button type="button" class="delete-row" aria-label="이 행 삭제">×</button></td>';
+    const keys = ['itemName','description','qty','unit','unitPrice','amount','remark'];
+    keys.forEach(key=>{
+      const el = tr.querySelector('[data-key="'+key+'"]');
+      el.value = textValue(d[key]);
+    });
+    tr.addEventListener('click', ()=>selectRow(tr));
+    tr.querySelector('.delete-row').addEventListener('click', e=>{
+      e.stopPropagation();
+      if(itemBody.children.length === 1){ clearRow(tr); return; }
+      tr.remove();
+      if(selectedRow === tr) selectedRow = null;
+      renumberRows();
+      if(rowHeightMode==='uniform') scheduleUniformRows();
+      changed();
+    });
+    tr.querySelectorAll('textarea').forEach(el=>el.addEventListener('input', ()=>{
+      autoGrowRow(tr);
+      if(rowHeightMode==='uniform') scheduleUniformRows();
+    }));
+    return tr;
+  }
+
+  function clearRow(row){
+    row.querySelectorAll('[data-key]').forEach(el=>el.value='');
+    row.dataset.minHeight=/^\d+$/.test(rowHeightMode) ? rowHeightMode : '28';
+    autoGrowRow(row);
+    if(rowHeightMode==='uniform') scheduleUniformRows();
+    changed();
+  }
+
+  function selectRow(row){
+    if(selectedRow) selectedRow.classList.remove('selected');
+    selectedRow = row;
+    selectedRow.classList.add('selected');
+  }
+
+  function renumberRows(){
+    Array.from(itemBody.children).forEach((row,index)=>{ row.querySelector('.no-cell').textContent=String(index+1); });
+  }
+
+  function autoGrowRow(row){
+    const minHeight = Math.max(28, Number(row.dataset.minHeight)||28);
+    row.style.height=minHeight+'px';
+    const areas = Array.from(row.querySelectorAll('textarea'));
+    areas.forEach(el=>{ el.style.height='1px'; });
+    let height = 28;
+    areas.forEach(el=>{ height=Math.max(height,el.scrollHeight+2); });
+    areas.forEach(el=>{ el.style.height=height+'px'; });
+  }
+
+  function autoGrowDocumentTextareas(){
+    document.querySelectorAll('.doc-field[type="hidden"]');
+    document.querySelectorAll('textarea.doc-field').forEach(el=>{
+      const min = el.closest('.note-block') ? 90 : (el.closest('.attached-table') ? 70 : 44);
+      el.style.height='1px';
+      el.style.height=Math.max(min,el.scrollHeight+4)+'px';
+    });
+  }
+
+  function rowObject(row){
+    const get = key => row.querySelector('[data-key="'+key+'"]').value.trim();
+    return {
+      id:row.dataset.id,
+      minHeight:Math.max(28,Number(row.dataset.minHeight)||28),
+      itemName:get('itemName'), description:get('description'), qty:get('qty'), unit:get('unit'),
+      unitPrice:get('unitPrice'), amount:get('amount'), remark:get('remark')
+    };
+  }
+
+  function getFields(){
+    const fields={};
+    document.querySelectorAll('.doc-field[name]').forEach(el=>{ fields[el.name]=el.value; });
+    return fields;
+  }
+
+  function getState(){
+    return {
+      fields:getFields(),
+      rows:Array.from(itemBody.children).map(rowObject),
+      colWidths:colWidths.slice(),
+      rowHeightMode,
+      projectLink:{projectId:selectedProjectId,sourceName:projectSourceName}
+    };
+  }
+
+  function normalizeHeader(value){
+    return textValue(value).replace(/^\uFEFF/,'').trim().toLowerCase().replace(/[\s_./()\-]+/g,'');
+  }
+
+  function pickProjectValue(record,aliases){
+    const normalized={};
+    Object.keys(record||{}).forEach(key=>{ normalized[normalizeHeader(key)]=record[key]; });
+    for(const alias of aliases){
+      const value=normalized[normalizeHeader(alias)];
+      if(value!==undefined&&value!==null&&textValue(value).trim()!=='') return textValue(value).trim();
+    }
+    return '';
+  }
+
+  const PROJECT_FIELD_ALIASES={
+    doc_no:['doc_no','document_no','문서번호'],
+    rev_no:['rev_no','revision','개정번호'],
+    write_date:['write_date','작성일','작성일자'],
+    po_no:['po_no','p/o number','pono','수주번호','발주번호'],
+    contract_date:['contract_date','계약일자','계약날짜'],
+    customer:['customer','client','clients/customer','발주처','고객','발주처고객'],
+    contract_number:['contract_number','contractno','계약번호'],
+    project_name:['project_name','project','공사명','프로젝트명'],
+    applied_code_class:['applied_code_class','code_class','적용코드등급','적용코드','등급'],
+    payment:['payment','payment_condition','결제조건'],
+    customer_po:['customer_po','customerpurchaseorder','고객발주서'],
+    work_scope:['work_scope','scope','공급범위'],
+    customer_spec:['customer_spec','customerpurchasespec','고객구매시방서'],
+    test_condition:['test_condition','시험요건'],
+    delivery_date:['delivery_date','납기일','납기일자'],
+    delivery_location:['delivery_location','납품장소'],
+    delivery_condition:['delivery_condition','납품조건'],
+    purchase_amount:['purchase_amount','amount','수주금액','계약금액']
+  };
+
+  function normalizeProjectRecord(record,index){
+    const fields={};
+    Object.keys(PROJECT_FIELD_ALIASES).forEach(name=>{
+      fields[name]=pickProjectValue(record,PROJECT_FIELD_ALIASES[name]);
+      if(fields[name]&&['write_date','contract_date','delivery_date'].includes(name)) fields[name]=toDisplayDate(fields[name]);
+    });
+    const explicitId=pickProjectValue(record,['project_id','projectid','id','프로젝트ID','프로젝트번호']);
+    const projectId=explicitId||fields.po_no||fields.doc_no||('project-'+(index+1));
+    const label=[fields.po_no||fields.doc_no||projectId,fields.project_name||fields.customer].filter(Boolean).join(' | ');
+    return {projectId,label:label||projectId,fields};
+  }
+
+  function parseCsv(text){
+    const rows=[];
+    let row=[],field='',quoted=false;
+    for(let i=0;i<text.length;i++){
+      const ch=text[i];
+      if(quoted){
+        if(ch==='"'&&text[i+1]==='"'){ field+='"'; i++; }
+        else if(ch==='"') quoted=false;
+        else field+=ch;
+      }else if(ch==='"') quoted=true;
+      else if(ch===','){ row.push(field); field=''; }
+      else if(ch==='\n'){ row.push(field.replace(/\r$/,'')); rows.push(row); row=[]; field=''; }
+      else field+=ch;
+    }
+    if(field!==''||row.length){ row.push(field.replace(/\r$/,'')); rows.push(row); }
+    const clean=rows.filter(values=>values.some(value=>textValue(value).trim()!==''));
+    if(clean.length<2) return [];
+    const headers=clean.shift().map(value=>textValue(value).trim());
+    return clean.map(values=>Object.fromEntries(headers.map((header,index)=>[header,values[index]??''])));
+  }
+
+  function parseProjectList(text,filename){
+    let raw;
+    if(/\.csv$/i.test(filename)) raw=parseCsv(text);
+    else{
+      const parsed=JSON.parse(text);
+      raw=Array.isArray(parsed)?parsed:(parsed.projects||parsed.project_list||parsed.data||[]);
+    }
+    if(!Array.isArray(raw)||!raw.length) throw new Error('프로젝트 데이터가 없습니다.');
+    return raw.map(normalizeProjectRecord);
+  }
+
+  function populateProjectSelect(){
+    const select=document.getElementById('projectSelect');
+    select.innerHTML='<option value="">프로젝트 선택 ('+projectRecords.length+'건)</option>';
+    projectRecords.forEach(record=>{
+      const option=document.createElement('option');
+      option.value=record.projectId;
+      option.textContent=record.label;
+      select.appendChild(option);
+    });
+    select.disabled=!projectRecords.length;
+    if(projectRecords.some(record=>record.projectId===selectedProjectId)) select.value=selectedProjectId;
+  }
+
+  function saveProjectList(){
+    try{ localStorage.setItem(PROJECT_LIST_KEY,JSON.stringify({sourceName:projectSourceName,records:projectRecords})); }catch(e){}
+  }
+
+  function restoreProjectList(){
+    try{
+      const saved=JSON.parse(localStorage.getItem(PROJECT_LIST_KEY));
+      if(saved&&Array.isArray(saved.records)){
+        projectRecords=saved.records;
+        projectSourceName=textValue(saved.sourceName);
+      }
+    }catch(e){ projectRecords=[]; projectSourceName=''; }
+    populateProjectSelect();
+  }
+
+  function applyProjectRecord(record,isAutomatic){
+    if(!record) return;
+    selectedProjectId=record.projectId;
+    document.getElementById('projectSelect').value=selectedProjectId;
+    Object.entries(record.fields).forEach(([name,value])=>{
+      if(!value) return;
+      const el=document.querySelector('.doc-field[name="'+name+'"]');
+      if(!el) return;
+      el.value=el.hasAttribute('data-date')?toDisplayDate(value):value;
+      el.classList.add('auto-linked');
+    });
+    syncDatePickers();
+    autoGrowDocumentTextareas();
+    validationPanel.className='validation-panel ok';
+    validationPanel.textContent=(isAutomatic?'수주번호 또는 문서번호가 일치해 자동 연결했습니다: ':'프로젝트 정보를 연결했습니다: ')+record.label+' — 자동 입력된 값도 직접 수정하고 저장할 수 있습니다.';
+    changed();
+  }
+
+  function tryAutoLinkProject(input){
+    if(!projectRecords.length||!input||!['po_no','doc_no'].includes(input.name)) return;
+    const value=input.value.trim();
+    if(!value) return;
+    const matches=projectRecords.filter(record=>textValue(record.fields[input.name]).trim()===value);
+    if(matches.length===1&&matches[0].projectId!==selectedProjectId) applyProjectRecord(matches[0],true);
+    else if(matches.length===0&&selectedProjectId){
+      selectedProjectId='';
+      document.getElementById('projectSelect').value='';
+    }
+  }
+
+  function importProjectListFile(file){
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        projectRecords=parseProjectList(String(reader.result||''),file.name);
+        projectSourceName=file.name;
+        selectedProjectId='';
+        saveProjectList();
+        populateProjectSelect();
+        const current=getFields();
+        const match=projectRecords.find(record=>(current.po_no&&record.fields.po_no===current.po_no)||(current.doc_no&&record.fields.doc_no===current.doc_no));
+        if(match) applyProjectRecord(match,true);
+        else{
+          validationPanel.className='validation-panel ok';
+          validationPanel.textContent='프로젝트 목록 '+projectRecords.length+'건을 불러왔습니다. 상단 콤보에서 프로젝트를 선택하세요.';
+        }
+      }catch(error){
+        validationPanel.className='validation-panel show';
+        validationPanel.textContent='프로젝트 목록을 불러오지 못했습니다. JSON 또는 CSV 파일의 열 이름을 확인해 주세요.';
+      }finally{
+        document.getElementById('projectListInput').value='';
+      }
+    };
+    reader.readAsText(file,'UTF-8');
+  }
+
+  function setFields(fields){
+    document.querySelectorAll('.doc-field[name]').forEach(el=>{
+      if(Object.prototype.hasOwnProperty.call(fields,el.name)){
+        el.value=el.hasAttribute('data-date') ? toDisplayDate(fields[el.name]) : textValue(fields[el.name]);
+      }
+    });
+    syncDatePickers();
+    autoGrowDocumentTextareas();
+  }
+
+  function toIsoDate(value){
+    const match=textValue(value).trim().match(/^(\d{4})[.\/-](\d{2})[.\/-](\d{2})$/);
+    return match ? match[1]+'-'+match[2]+'-'+match[3] : '';
+  }
+
+  function toDisplayDate(value){
+    const iso=toIsoDate(value);
+    return iso ? iso.replace(/-/g,'.') : textValue(value);
+  }
+
+  function syncDatePickers(){
+    document.querySelectorAll('.date-picker').forEach(picker=>{
+      const display=picker.querySelector('.date-display');
+      const native=picker.querySelector('.date-native');
+      native.value=toIsoDate(display.value);
+    });
+  }
+
+  function bindDatePickers(){
+    document.querySelectorAll('.date-picker').forEach(picker=>{
+      const display=picker.querySelector('.date-display');
+      const native=picker.querySelector('.date-native');
+      native.addEventListener('change',()=>{
+        if(!native.value) return;
+        display.value=toDisplayDate(native.value);
+        display.dispatchEvent(new Event('input',{bubbles:true}));
+      });
+      display.addEventListener('blur',()=>{
+        const formatted=toDisplayDate(display.value);
+        if(formatted!==display.value){
+          display.value=formatted;
+          display.dispatchEvent(new Event('input',{bubbles:true}));
+        }
+        native.value=toIsoDate(display.value);
+      });
+    });
+  }
+
+  function setRows(rows){
+    itemBody.innerHTML='';
+    (rows && rows.length ? rows : [{}]).forEach(data=>itemBody.appendChild(createEditorRow(data)));
+    renumberRows();
+    Array.from(itemBody.children).forEach(autoGrowRow);
+  }
+
+  function sampleState(){
+    return {
+      fields:Object.assign({},SAMPLE.fields),
+      rows:SAMPLE.rows.map((r,i)=>({id:'sample-'+i,minHeight:28,itemName:r[0],description:r[1],qty:r[2],unit:r[3],unitPrice:r[4],amount:r[5],remark:r[6]})),
+      colWidths:DEFAULT_COL_WIDTHS.slice(),
+      rowHeightMode:'auto'
+    };
+  }
+
+  function applyState(state){
+    setFields(state.fields||{});
+    setRows(state.rows||[{}]);
+    colWidths = Array.isArray(state.colWidths) && state.colWidths.length===8 ? state.colWidths.map(Number) : DEFAULT_COL_WIDTHS.slice();
+    rowHeightMode=['auto','32','50','68','uniform'].includes(String(state.rowHeightMode)) ? String(state.rowHeightMode) : 'auto';
+    selectedProjectId=textValue(state.projectLink&&state.projectLink.projectId);
+    if(!projectSourceName) projectSourceName=textValue(state.projectLink&&state.projectLink.sourceName);
+    document.getElementById('projectSelect').value=selectedProjectId;
+    document.getElementById('allRowHeightSelect').value=rowHeightMode;
+    if(rowHeightMode!=='auto') applyAllRowHeight(rowHeightMode,false);
+    applyColumnWidths();
+    scheduleEstimate();
+  }
+
+  function saveState(){
+    try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(getState())); }catch(e){ /* 로컬 파일 저장 제한 시 무시 */ }
+  }
+
+  function safeFilePart(value){
+    return textValue(value).trim().replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,'_').slice(0,60) || '새문서';
+  }
+
+  function exportDocumentFile(){
+    const state=getState();
+    const now=new Date();
+    const stamp=now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+'-'+String(now.getHours()).padStart(2,'0')+String(now.getMinutes()).padStart(2,'0');
+    const filename='CN_'+safeFilePart(state.fields.doc_no||state.fields.po_no)+'_'+stamp+'.json';
+    const payload={
+      format:'YGM-CN-DOCUMENT',
+      version:1,
+      savedAt:now.toISOString(),
+      data:state
+    };
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    link.href=url;
+    link.download=filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    validationPanel.className='validation-panel ok';
+    validationPanel.textContent='작성파일을 저장했습니다: '+filename+'  (다시 편집할 때 “저장파일 불러오기”를 사용하세요.)';
+  }
+
+  function importDocumentFile(file){
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const parsed=JSON.parse(String(reader.result||''));
+        const state=parsed&&parsed.format==='YGM-CN-DOCUMENT' ? parsed.data : parsed;
+        if(!state||!state.fields||!Array.isArray(state.rows)) throw new Error('지원하지 않는 파일 구조입니다.');
+        applyState(state);
+        validationPanel.className='validation-panel ok';
+        validationPanel.textContent='저장파일을 불러왔습니다: '+file.name;
+      }catch(error){
+        validationPanel.className='validation-panel show';
+        validationPanel.textContent='저장파일을 불러오지 못했습니다. 이 양식에서 저장한 JSON 파일인지 확인해 주세요.';
+      }finally{
+        document.getElementById('loadFileInput').value='';
+      }
+    };
+    reader.onerror=()=>{
+      validationPanel.className='validation-panel show';
+      validationPanel.textContent='파일을 읽는 중 문제가 발생했습니다.';
+      document.getElementById('loadFileInput').value='';
+    };
+    reader.readAsText(file,'UTF-8');
+  }
+
+  function changed(){
+    saveState();
+    scheduleEstimate();
+  }
+
+  function applyColumnWidths(){
+    const cols = document.querySelectorAll('#editorColgroup col');
+    colWidths.forEach((width,index)=>{ cols[index].style.width=(width*.94)+'%'; });
+    if(cols[8]) cols[8].style.width='6%';
+    changedSilently();
+  }
+
+  function changedSilently(){
+    saveState();
+    scheduleEstimate();
+  }
+
+  function adjustColumn(delta){
+    const index=Number(document.getElementById('columnSelect').value);
+    const partner=index<colWidths.length-1 ? index+1 : index-1;
+    if(delta>0){
+      const available=colWidths[partner]-MIN_COL_WIDTHS[partner];
+      const step=Math.min(delta,available);
+      if(step<=0) return;
+      colWidths[index]+=step; colWidths[partner]-=step;
+    }else{
+      const available=colWidths[index]-MIN_COL_WIDTHS[index];
+      const step=Math.min(Math.abs(delta),available);
+      if(step<=0) return;
+      colWidths[index]-=step; colWidths[partner]+=step;
+    }
+    applyColumnWidths();
+  }
+
+  function adjustSelectedRow(delta){
+    if(!selectedRow){
+      validationPanel.className='validation-panel show';
+      validationPanel.textContent='먼저 수주내역에서 높이를 조절할 행을 클릭해 주세요.';
+      return;
+    }
+    rowHeightMode='auto';
+    document.getElementById('allRowHeightSelect').value='auto';
+    const current=Math.max(28,Number(selectedRow.dataset.minHeight)||28);
+    selectedRow.dataset.minHeight=String(Math.max(28,Math.min(120,current+delta)));
+    autoGrowRow(selectedRow);
+    changed();
+  }
+
+  function addRow(data){
+    const row=createEditorRow(data||{});
+    if(/^\d+$/.test(rowHeightMode)) row.dataset.minHeight=rowHeightMode;
+    itemBody.appendChild(row);
+    renumberRows();
+    autoGrowRow(row);
+    if(rowHeightMode==='uniform') scheduleUniformRows();
+    selectRow(row);
+    row.scrollIntoView({behavior:'smooth',block:'center'});
+    changed();
+  }
+
+  function applyAllRowHeight(mode,persist){
+    rowHeightMode=String(mode||'auto');
+    const rows=Array.from(itemBody.children);
+    document.getElementById('allRowHeightSelect').value=rowHeightMode;
+    if(rowHeightMode==='uniform'){
+      rows.forEach(row=>{
+        row.dataset.minHeight='28';
+        autoGrowRow(row);
+      });
+      const tallest=Math.max(28,...rows.map(row=>Math.ceil(row.getBoundingClientRect().height)));
+      rows.forEach(row=>{
+        row.dataset.minHeight=String(Math.min(120,tallest));
+        autoGrowRow(row);
+      });
+    }else{
+      const height=/^\d+$/.test(rowHeightMode) ? Number(rowHeightMode) : 28;
+      rows.forEach(row=>{
+        row.dataset.minHeight=String(height);
+        autoGrowRow(row);
+      });
+    }
+    if(persist!==false) changed();
+  }
+
+  function scheduleUniformRows(){
+    clearTimeout(uniformRowTimer);
+    uniformRowTimer=setTimeout(()=>applyAllRowHeight('uniform'),80);
+  }
+
+  function valueDiv(value,extraClass){
+    const div=document.createElement('div');
+    div.className='print-static-value'+(extraClass?' '+extraClass:'');
+    div.textContent=textValue(value) || '\u00a0';
+    return div;
+  }
+
+  function makeLogoStack(){
+    const stack=document.createElement('div');
+    stack.className='logo-stack';
+    stack.innerHTML='<img src="assets/ygm-logo.png" alt="YG Metal 로고"><div class="brand-fallback"><strong>YGM</strong><span>POWER &amp; OFFSHORE</span></div>';
+    const img=stack.querySelector('img');
+    const fallback=stack.querySelector('.brand-fallback');
+    img.addEventListener('load',()=>{fallback.style.display='none';});
+    img.addEventListener('error',()=>{img.style.display='none';fallback.style.display='block';});
+    if(img.complete){
+      if(img.naturalWidth>0) fallback.style.display='none';
+      else {img.style.display='none';fallback.style.display='block';}
+    }
+    return stack;
+  }
+
+  function makeHeader(fields,pageText){
+    const table=document.createElement('table');
+    table.className='document-header';
+    const tr=document.createElement('tr');
+    tr.style.height='60px';
+    const logo=document.createElement('td'); logo.className='logo-cell'; logo.appendChild(makeLogoStack());
+    const title=document.createElement('td'); title.className='title-cell'; title.innerHTML='<div class="title-ko">수주통보서</div><div class="title-en">Contract Notification Report (CN)</div>';
+    const info=document.createElement('td'); info.className='info-cell';
+    const inner=document.createElement('table'); inner.className='docinfo';
+    [['문서번호',fields.doc_no],['개정번호',fields.rev_no],['작성일',fields.write_date],['페이지 번호',pageText]].forEach(pair=>{
+      const r=document.createElement('tr');
+      const k=document.createElement('td'); k.className='k'; k.textContent=pair[0];
+      const v=document.createElement('td'); v.className='v'; v.appendChild(valueDiv(pair[1],'center'));
+      r.append(k,v); inner.appendChild(r);
+    });
+    info.appendChild(inner); tr.append(logo,title,info); table.appendChild(tr);
+    return table;
+  }
+
+  function makeDetails(fields){
+    const table=document.createElement('table');
+    table.className='field-table';
+    table.innerHTML='<colgroup><col><col><col><col></colgroup>';
+    function addPair(labelA,enA,valueA,labelB,enB,valueB,multi){
+      const tr=document.createElement('tr');
+      const la=document.createElement('td'); la.className='label'; la.innerHTML=labelA+'<br><span class="tiny">'+enA+'</span>';
+      const va=document.createElement('td'); if(multi) va.className='multiline'; va.appendChild(valueDiv(valueA));
+      const lb=document.createElement('td'); lb.className='label'; lb.innerHTML=labelB+'<br><span class="tiny">'+enB+'</span>';
+      const vb=document.createElement('td'); if(multi) vb.className='multiline'; vb.appendChild(valueDiv(valueB));
+      tr.append(la,va,lb,vb); table.appendChild(tr);
+    }
+    addPair('수주번호','P/O Number',fields.po_no,'계약일자','Contract Date',fields.contract_date);
+    addPair('발주처/고객','Clients/Customer',fields.customer,'계약번호','Contract Number',fields.contract_number);
+    addPair('공사명','Project Name',fields.project_name,'적용코드/등급','Applied Code/Class',fields.applied_code_class,true);
+    addPair('결제조건','Payment',fields.payment,'고객발주서','Customer Purchase Order',fields.customer_po);
+    addPair('공급범위','Work Scope',fields.work_scope,'고객구매시방서','Customer Purchase Spec',fields.customer_spec,true);
+    addPair('시험요건','Test Condition',fields.test_condition,'납기일','Delivery Date',fields.delivery_date);
+    addPair('납품장소','Delivery location',fields.delivery_location,'납품조건','Delivery Condition',fields.delivery_condition);
+    const tr=document.createElement('tr');
+    const label=document.createElement('td'); label.className='label'; label.innerHTML='수주금액<br><span class="tiny">Purchase Amount</span>';
+    const amount=document.createElement('td'); amount.colSpan=3;
+    const line=document.createElement('div'); line.className='amount-line';
+    line.append(valueDiv('(원화)'),valueDiv(fields.purchase_amount,'amount-value'),valueDiv('VAT 별도','vat-label'));
+    amount.appendChild(line); tr.append(label,amount); table.appendChild(tr);
+    return table;
+  }
+
+  function makeSectionTitle(){
+    const div=document.createElement('div'); div.className='section-title'; div.textContent='수주 내역 (Contract Condition)'; return div;
+  }
+
+  function makeItemsTable(){
+    const table=document.createElement('table');
+    table.className='items-table print-items';
+    const colgroup=document.createElement('colgroup');
+    colWidths.forEach(width=>{ const col=document.createElement('col'); col.style.width=width+'%'; colgroup.appendChild(col); });
+    const thead=document.createElement('thead');
+    thead.innerHTML='<tr><th>순번<br><span class="tiny">No.</span></th><th>품명<br><span class="tiny">Item Name</span></th><th>기술사항<br><span class="tiny">Description</span></th><th>수량<br><span class="tiny">Q\'ty</span></th><th>단위<br><span class="tiny">Unit</span></th><th>단가<br><span class="tiny">Unit Price</span></th><th>금액<br><span class="tiny">Amount</span></th><th>비고<br><span class="tiny">Remark</span></th></tr>';
+    table.append(colgroup,thead,document.createElement('tbody'));
+    return table;
+  }
+
+  function makePrintRow(row,index){
+    const tr=document.createElement('tr');
+    tr.className='print-item-row';
+    tr.style.height=Math.max(28,Number(row.minHeight)||28)+'px';
+    const values=[String(index+1),row.itemName,row.description,row.qty,row.unit,row.unitPrice,row.amount,row.remark];
+    values.forEach((value,i)=>{
+      const td=document.createElement('td');
+      if(i===0||i===4) td.className='center';
+      if(i===3||i===5||i===6) td.className='right';
+      td.appendChild(valueDiv(value));
+      tr.appendChild(td);
+    });
+    return tr;
+  }
+
+  function makeClosing(fields,printMode){
+    const wrap=document.createElement('div');
+    wrap.className='closing-block'+(printMode?' print-closing':'');
+    const note=document.createElement('div'); note.className='note-block';
+    const noteLabel=document.createElement('span'); noteLabel.className='note-label'; noteLabel.textContent='Note (특이사항) :';
+    note.append(noteLabel,valueDiv(fields.note));
+    const attached=document.createElement('table'); attached.className='attached-table';
+    attached.innerHTML='<colgroup><col><col></colgroup>';
+    const ar=document.createElement('tr');
+    const al=document.createElement('td'); al.className='label'; al.innerHTML='첨부자료<br><span class="tiny">Attached</span>';
+    const av=document.createElement('td'); av.appendChild(valueDiv(fields.attached)); ar.append(al,av); attached.appendChild(ar);
+    const dist=document.createElement('table'); dist.className='distribution-table';
+    dist.innerHTML='<colgroup><col><col><col><col><col><col><col></colgroup><tr class="label"><td rowspan="2">배포처<br><span class="tiny">Distributed to</span></td><td>구매팀<br><span class="tiny">PC TEAM</span></td><td>생산팀<br><span class="tiny">PD TEAM</span></td><td>QA팀<br><span class="tiny">QA TEAM</span></td><td>QA 검토<br><span class="tiny">Reviewed by QA</span></td><td>작 성<br><span class="tiny">Prepared by</span></td><td>검토 / 승인<br><span class="tiny">Reviewed / Approved by</span></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+    wrap.append(note,attached,dist);
+    return wrap;
+  }
+
+  function makePageFooter(){
+    const footer=document.createElement('div'); footer.className='print-page-footer';
+    footer.innerHTML='<span>YG-KQSP-012-02, Rev.1 (2023. 11. 30)</span><span>YG Metal Co., Ltd.</span><span>A4(210×297)mm</span>';
+    return footer;
+  }
+
+  function measureLayout(state){
+    measureRoot.innerHTML='';
+    const ruler=document.createElement('div'); ruler.className='measure-page-ruler'; measureRoot.appendChild(ruler);
+    const pageHeight=ruler.getBoundingClientRect().height; ruler.remove();
+    const footerRuler=document.createElement('div'); footerRuler.className='measure-footer-ruler'; measureRoot.appendChild(footerRuler);
+    const footerHeight=footerRuler.getBoundingClientRect().height; footerRuler.remove();
+
+    const wrapper=document.createElement('div'); wrapper.className='measure-width'; measureRoot.appendChild(wrapper);
+    const header=makeHeader(state.fields,'1 of 1');
+    const details=makeDetails(state.fields);
+    const section=makeSectionTitle();
+    const table=makeItemsTable();
+    wrapper.append(header,details,section,table);
+    state.rows.forEach((row,index)=>table.tBodies[0].appendChild(makePrintRow(row,index)));
+    const headerHeight=header.getBoundingClientRect().height;
+    const detailsHeight=details.getBoundingClientRect().height;
+    const sectionHeight=section.getBoundingClientRect().height;
+    const headHeight=table.tHead.getBoundingClientRect().height;
+    const rowHeights=Array.from(table.tBodies[0].rows).map(row=>row.getBoundingClientRect().height+0.7);
+
+    const closing=makeClosing(state.fields,true); wrapper.appendChild(closing);
+    const closingHeight=closing.getBoundingClientRect().height+2;
+    const safety=4;
+    const firstCapacity=pageHeight-headerHeight-detailsHeight-sectionHeight-headHeight-footerHeight-safety;
+    const continuingCapacity=pageHeight-headerHeight-headHeight-footerHeight-safety;
+    measureRoot.innerHTML='';
+    return {pageHeight,firstCapacity,continuingCapacity,closingHeight,rowHeights};
+  }
+
+  function paginateRows(state,metrics){
+    const maxPages=Math.max(20,state.rows.length+2);
+    for(let count=1;count<=maxPages;count++){
+      const capacities=[];
+      for(let i=0;i<count;i++){
+        let cap=i===0?metrics.firstCapacity:metrics.continuingCapacity;
+        if(i===count-1) cap-=metrics.closingHeight;
+        capacities.push(cap);
+      }
+      if(capacities.some(cap=>cap<0)) continue;
+      const pages=Array.from({length:count},()=>[]);
+      const used=Array(count).fill(0);
+      let pageIndex=0;
+      let failed=false;
+      for(let rowIndex=0;rowIndex<state.rows.length;rowIndex++){
+        const height=metrics.rowHeights[rowIndex]||30;
+        while(pageIndex<count && used[pageIndex]+height>capacities[pageIndex]) pageIndex++;
+        if(pageIndex>=count){ failed=true; break; }
+        pages[pageIndex].push(rowIndex);
+        used[pageIndex]+=height;
+      }
+      if(!failed) return pages;
+    }
+    return [state.rows.map((_,i)=>i)];
+  }
+
+  function buildPrintPages(){
+    autoGrowDocumentTextareas();
+    Array.from(itemBody.children).forEach(autoGrowRow);
+    const state=getState();
+    const metrics=measureLayout(state);
+    const pages=paginateRows(state,metrics);
+    printRoot.innerHTML='';
+    pages.forEach((rowIndexes,pageIndex)=>{
+      const page=document.createElement('section'); page.className='print-page';
+      page.appendChild(makeHeader(state.fields,(pageIndex+1)+' of '+pages.length));
+      if(pageIndex===0){ page.append(makeDetails(state.fields),makeSectionTitle()); }
+      const table=makeItemsTable();
+      rowIndexes.forEach(rowIndex=>table.tBodies[0].appendChild(makePrintRow(state.rows[rowIndex],rowIndex)));
+      page.appendChild(table);
+      if(pageIndex===pages.length-1) page.appendChild(makeClosing(state.fields,true));
+      page.appendChild(makePageFooter());
+      printRoot.appendChild(page);
+    });
+    pageStatus.textContent='예상 '+pages.length+'페이지 · '+state.rows.length+'행';
+    return pages.length;
+  }
+
+  function scheduleEstimate(){
+    clearTimeout(estimateTimer);
+    pageStatus.textContent='페이지 다시 계산 중…';
+    estimateTimer=setTimeout(()=>{
+      try{ buildPrintPages(); }catch(error){ pageStatus.textContent='페이지 계산 확인 필요'; console.error(error); }
+    },260);
+  }
+
+  function validate(showPanel){
+    const errors=[];
+    const numericPattern=/^-?[0-9][0-9,]*(?:\.[0-9]+)?$/;
+    function validDate(value){
+      if(!/^\d{4}\.\d{2}\.\d{2}$/.test(value)) return false;
+      const parts=value.split('.').map(Number);
+      const date=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]));
+      return date.getUTCFullYear()===parts[0]&&date.getUTCMonth()===parts[1]-1&&date.getUTCDate()===parts[2];
+    }
+    document.querySelectorAll('.invalid').forEach(el=>el.classList.remove('invalid'));
+    document.querySelectorAll('.required').forEach(el=>{
+      if(!el.value.trim()){
+        el.classList.add('invalid');
+        errors.push((el.getAttribute('aria-label')||el.name||'필수 항목')+'을(를) 입력해 주세요.');
+      }
+    });
+    document.querySelectorAll('[data-date]').forEach(el=>{
+      if(el.value.trim()&&!validDate(el.value.trim())){
+        el.classList.add('invalid'); errors.push((el.name||'날짜')+' 형식은 YYYY.MM.DD입니다.');
+      }
+    });
+    document.querySelectorAll('[data-number]').forEach(el=>{
+      if(el.value.trim()&&!numericPattern.test(el.value.trim())){
+        el.classList.add('invalid'); errors.push((el.name||'금액')+'에는 숫자와 쉼표만 입력해 주세요.');
+      }
+    });
+    const rows=Array.from(itemBody.children);
+    const filled=rows.filter(row=>{
+      const d=rowObject(row); return [d.itemName,d.description,d.qty,d.unit,d.unitPrice,d.amount,d.remark].some(Boolean);
+    });
+    if(!filled.length) errors.push('수주내역을 한 행 이상 입력해 주세요.');
+    filled.forEach((row,index)=>{
+      const d=rowObject(row);
+      [['itemName','품명'],['description','기술사항'],['qty','수량'],['unit','단위']].forEach(pair=>{
+        if(!d[pair[0]]){
+          row.querySelector('[data-key="'+pair[0]+'"]').classList.add('invalid');
+          errors.push((index+1)+'번 입력행의 '+pair[1]+'이 비어 있습니다.');
+        }
+      });
+      [['qty','수량'],['unitPrice','단가'],['amount','금액']].forEach(pair=>{
+        const el=row.querySelector('[data-key="'+pair[0]+'"]');
+        if(d[pair[0]]&&!numericPattern.test(d[pair[0]])){
+          el.classList.add('invalid');
+          errors.push((index+1)+'번 입력행의 '+pair[1]+'에는 숫자와 쉼표만 입력해 주세요.');
+        }
+      });
+    });
+    if(showPanel){
+      validationPanel.className=errors.length?'validation-panel show':'validation-panel ok';
+      if(errors.length){
+        validationPanel.innerHTML='<strong>확인이 필요한 항목 '+errors.length+'개</strong><br>'+errors.map((e,i)=>(i+1)+'. '+e).join('<br>');
+      }else{
+        validationPanel.textContent='입력 검토가 완료되었습니다. 필수 항목과 날짜 형식에 문제가 없습니다.';
+      }
+      validationPanel.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+    return errors;
+  }
+
+  document.getElementById('addRowBtn').addEventListener('click',()=>addRow());
+  document.getElementById('loadProjectListBtn').addEventListener('click',()=>document.getElementById('projectListInput').click());
+  document.getElementById('projectListInput').addEventListener('change',event=>importProjectListFile(event.target.files&&event.target.files[0]));
+  document.getElementById('projectSelect').addEventListener('change',event=>{
+    const record=projectRecords.find(item=>item.projectId===event.target.value);
+    if(record) applyProjectRecord(record,false);
+    else{ selectedProjectId=''; changed(); }
+  });
+  document.getElementById('saveFileBtn').addEventListener('click',exportDocumentFile);
+  document.getElementById('loadFileBtn').addEventListener('click',()=>document.getElementById('loadFileInput').click());
+  document.getElementById('loadFileInput').addEventListener('change',event=>{
+    const file=event.target.files&&event.target.files[0];
+    if(file&&confirm('현재 입력 내용을 선택한 저장파일 내용으로 교체할까요?')) importDocumentFile(file);
+    else event.target.value='';
+  });
+  document.getElementById('colMinusBtn').addEventListener('click',()=>adjustColumn(-1));
+  document.getElementById('colPlusBtn').addEventListener('click',()=>adjustColumn(1));
+  document.getElementById('rowMinusBtn').addEventListener('click',()=>adjustSelectedRow(-6));
+  document.getElementById('rowPlusBtn').addEventListener('click',()=>adjustSelectedRow(6));
+  document.getElementById('allRowHeightSelect').addEventListener('change',event=>applyAllRowHeight(event.target.value));
+  document.getElementById('validateBtn').addEventListener('click',()=>validate(true));
+  document.getElementById('sampleBtn').addEventListener('click',()=>{
+    if(confirm('현재 입력을 예시 데이터로 교체할까요?')) applyState(sampleState());
+  });
+  document.getElementById('clearBtn').addEventListener('click',()=>{
+    if(!confirm('입력값과 행·열 조정값을 모두 초기화할까요?')) return;
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+    const blankFields={}; document.querySelectorAll('.doc-field[name]').forEach(el=>blankFields[el.name]='');
+    applyState({fields:blankFields,rows:[{}],colWidths:DEFAULT_COL_WIDTHS.slice()});
+  });
+  document.getElementById('printBtn').addEventListener('click',()=>{
+    const errors=validate(true);
+    if(errors.length&&!confirm('확인이 필요한 항목이 있습니다. 그래도 인쇄 미리보기를 열까요?')) return;
+    buildPrintPages();
+    setTimeout(()=>window.print(),80);
+  });
+
+  document.getElementById('editorPaper').addEventListener('input',event=>{
+    if(event.target.matches('textarea.doc-field')) autoGrowDocumentTextareas();
+    if(event.target.matches('.doc-field')) event.target.classList.remove('auto-linked');
+    changed();
+  });
+  document.getElementById('editorPaper').addEventListener('change',event=>{
+    tryAutoLinkProject(event.target);
+    changed();
+  });
+  window.addEventListener('beforeprint',buildPrintPages);
+  window.addEventListener('keydown',event=>{
+    if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){
+      event.preventDefault();
+      exportDocumentFile();
+    }
+  });
+  window.addEventListener('resize',()=>{
+    Array.from(itemBody.children).forEach(autoGrowRow);
+    scheduleEstimate();
+  });
+
+  let initial=null;
+  try{ initial=JSON.parse(localStorage.getItem(STORAGE_KEY)); }catch(e){ initial=null; }
+  bindDatePickers();
+  restoreProjectList();
+  applyState(initial&&initial.rows?initial:sampleState());
+  populateProjectSelect();
+})();
+</script>
+</body>
+</html>
